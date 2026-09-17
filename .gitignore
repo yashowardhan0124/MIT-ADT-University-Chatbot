@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.vscode/
+flask_session/__pycache__/
+
+flask_session/*
+!flask_session/app.py
+uploads/*.csv
+university.db

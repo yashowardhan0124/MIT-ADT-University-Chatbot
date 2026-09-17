@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIT-ADT AI Assistant</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body data-theme="light" class="chat-page">
+
+  <!-- Premium welcome screen -->
+  <section id="welcomeScreen" class="welcome-overlay">
+    <div class="welcome-orbit orbit-one"></div>
+    <div class="welcome-orbit orbit-two"></div>
+    <div class="welcome-card">
+      <div class="welcome-logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT University logo">
+      </div>
+      <div class="welcome-eyebrow">MIT-ADT UNIVERSITY</div>
+      <h1>Intelligent answers.<br><span>University knowledge.</span></h1>
+      <p>Your AI-powered university assistant for courses, fees, departments, hostel, placements, events and more.</p>
+      <button id="startBtn" class="welcome-start">
+        <span>Start a conversation</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+      <div class="welcome-meta">
+        <span><i class="fa-solid fa-shield-halved"></i> University assistant</span>
+        <span><i class="fa-solid fa-bolt"></i> Fast responses</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Application -->
+  <div id="chatApp" class="chat-page" style="display:none;">
+    <header class="app-topbar">
+      <div class="top-brand">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT">
+        <div>
+          <div class="top-brand-title">MIT-ADT AI Assistant</div>
+          <span class="top-brand-sub">University Information Platform</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fa-regular fa-moon"></i>
+        </button>
+        <a class="icon-btn" href="/logout" title="Logout" aria-label="Logout">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </a>
+        <div class="profile-pill">
+          <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
+          <span>Student</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="mini-label">Workspace</div>
+        </div>
+
+        <button class="new-chat" onclick="newChat()">
+          <i class="fa-solid fa-plus"></i>
+          <span>New conversation</span>
+        </button>
+
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="chatSearch" type="text" placeholder="Search conversations..." oninput="filterChats(this.value)">
+        </div>
+
+        <div class="sidebar-section-title">Recent conversations</div>
+        <div class="chat-list" id="chatList"></div>
+
+        <div class="sidebar-bottom">
+          <form id="uploadForm" action="/upload_dataset" method="POST" enctype="multipart/form-data">
+            <label for="fileUpload" class="upload-btn" title="Upload CSV dataset">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload student dataset</span>
+            </label>
+            <input type="file" id="fileUpload" name="file" accept=".csv" hidden onchange="handleUpload()">
+          </form>
+          <a href="/logout" class="sidebar-link">
+            <i class="fa-solid fa-right-from-bracket"></i><span>Sign out</span>
+          </a>
+        </div>
+      </aside>
+
+      <main class="chat-main">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title" id="chatTitle">New conversation</div>
+            <div class="dataset-note">Ask questions using the university knowledge base</div>
+          </div>
+          <div class="chat-status"><span class="status-dot"></span> Assistant online</div>
+        </div>
+
+        <div class="chat-messages" id="messages"></div>
+
+        <div class="chat-composer">
+          <div class="composer-inner">
+            <div class="chat-input">
+              <input type="text" id="messageInput" autocomplete="off"
+                     placeholder="Ask about courses, fees, placements, hostel..."
+                     onkeypress="if(event.key==='Enter'){sendMessage()}">
+              <button class="send-btn" onclick="sendMessage()" title="Send message" aria-label="Send message">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
+            <div class="composer-hint">MIT-ADT AI Assistant can help you find university information quickly.</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+  const logoUrl = "{{ url_for('static', filename='logo.png') }}";
+  let chats = JSON.parse(localStorage.getItem("chats")) || {};
+  let currentChatId = null;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const startBtn = document.getElementById("startBtn");
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const chatApp = document.getElementById("chatApp");
+
+    startBtn.addEventListener("click", () => {
+      welcomeScreen.classList.add("hide");
+      setTimeout(() => {
+        welcomeScreen.style.display = "none";
+        chatApp.style.display = "flex";
+        if (Object.keys(chats).length === 0) newChat();
+        else { loadChatList(); loadChat(Object.keys(chats)[0]); }
+      }, 450);
+    });
+  });
+
+  function toggleTheme() {
+    const isLight = document.body.dataset.theme !== "dark";
+    document.body.dataset.theme = isLight ? "dark" : "light";
+    const icon = document.querySelector(".theme-toggle i");
+    if (icon) icon.className = isLight ? "fa-regular fa-sun" : "fa-regular fa-moon";
+  }
+
+  function saveChats() {
+    localStorage.setItem("chats", JSON.stringify(chats));
+  }
+
+  function loadChatList(filter = "") {
+    const chatList = document.getElementById("chatList");
+    chatList.innerHTML = "";
+    const q = filter.trim().toLowerCase();
+
+    Object.entries(chats).reverse().forEach(([id, chat]) => {
+      const title = chat.title || "New conversation";
+      if (q && !title.toLowerCase().includes(q)) return;
+
+      const div = document.createElement("div");
+      div.className = "chat-list-item" + (id === currentChatId ? " active" : "");
+      div.innerHTML = `
+        <span onclick="loadChat('${id}')"><i class="fa-regular fa-message" style="margin-right:8px;opacity:.5"></i>${escapeHtml(title)}</span>
+        <span class="delete-btn" onclick="deleteChat(event,'${id}')" title="Delete chat"><i class="fa-solid fa-trash-can"></i></span>`;
+      chatList.appendChild(div);
+    });
+  }
+
+  function filterChats(value) {
+    loadChatList(value);
+  }
+
+  function loadChat(id) {
+    if (!chats[id]) return;
+    currentChatId = id;
+    document.getElementById("chatTitle").textContent = chats[id].title || "New conversation";
+    const messagesDiv = document.getElementById("messages");
+    messagesDiv.innerHTML = "";
+
+    if (!chats[id].messages.length) {
+      renderWelcomeState();
+    } else {
+      chats[id].messages.forEach(m => addMessage(m.text, m.sender, false, m.time));
+    }
+    loadChatList(document.getElementById("chatSearch")?.value || "");
+  }
+
+  function renderWelcomeState() {
+    const messagesDiv = document.getElementById("messages");
+    messagesDiv.innerHTML = `
+      <div class="welcome-state">
+        <div class="logo-ring"><img src="${logoUrl}" alt="MIT-ADT"></div>
+        <div class="eyebrow">MIT-ADT AI ASSISTANT</div>
+        <h1>How can we help?</h1>
+        <p>Ask a question about the university and get information from the connected knowledge base.</p>
+        <div class="quick-grid">
+          <div class="quick-card" onclick="quickAsk('Tell me about the courses')">
+            <div class="quick-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <strong>Courses & programs</strong>
+            <span>Explore available academic programs</span>
+          </div>
+          <div class="quick-card" onclick="quickAsk('Tell me about fees')">
+            <div class="quick-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <strong>Fees & scholarships</strong>
+            <span>View tuition and scholarship information</span>
+          </div>
+          <div class="quick-card" onclick="quickAsk('Tell me about hostel')">
+            <div class="quick-icon"><i class="fa-solid fa-building"></i></div>
+            <strong>Hostel</strong>
+            <span>Find hostel facilities and details</span>
+          </div>
+          <div class="quick-card" onclick="quickAsk('Tell me about placements')">
+            <div class="quick-icon"><i class="fa-solid fa-briefcase"></i></div>
+            <strong>Placements</strong>
+            <span>Explore placement highlights</span>
+          </div>
+          <div class="quick-card" onclick="quickAsk('Tell me about departments')">
+            <div class="quick-icon"><i class="fa-solid fa-landmark"></i></div>
+            <strong>Departments</strong>
+            <span>Browse departments and faculty areas</span>
+          </div>
+          <div class="quick-card" onclick="quickAsk('Tell me about events')">
+            <div class="quick-icon"><i class="fa-regular fa-calendar"></i></div>
+            <strong>Events</strong>
+            <span>Discover university events and activities</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function quickAsk(text) {
+    const input = document.getElementById("messageInput");
+    input.value = text;
+    sendMessage();
+  }
+
+  function newChat() {
+    const id = Date.now().toString();
+    chats[id] = {title:"New conversation", messages:[]};
+    currentChatId = id;
+    saveChats();
+    loadChatList();
+    loadChat(id);
+    document.getElementById("messageInput").focus();
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const msg = input.value.trim();
+    if (!msg || !currentChatId) return;
+
+    if (chats[currentChatId].messages.length === 0) {
+      chats[currentChatId].title = msg.length > 32 ? msg.slice(0,32) + "..." : msg;
+    }
+
+    addMessage(msg, "user", true);
+    input.value = "";
+
+    const messagesDiv = document.getElementById("messages");
+    const typingDiv = document.createElement("div");
+    typingDiv.className = "typing-row";
+    typingDiv.innerHTML = `
+      <div class="msg-avatar bot-avatar"><img src="${logoUrl}" alt=""></div>
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+      <span>Assistant is thinking...</span>`;
+    messagesDiv.appendChild(typingDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    fetch("/get", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:msg})
+    })
+    .then(res => res.json())
+    .then(data => {
+      typingDiv.remove();
+      const reply = data.reply || data.response || "Sorry, I didn't get that.";
+      addBotMessage(reply, data.options);
+    })
+    .catch(err => {
+      console.error(err);
+      typingDiv.remove();
+      addBotMessage("Unable to connect to the assistant. Please try again.");
+    });
+  }
+
+  function addMessage(text, sender, save=true, time=null) {
+    const messagesDiv = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = "msg-row " + (sender === "user" ? "user" : "bot");
+
+    const avatar = document.createElement("div");
+    avatar.className = "msg-avatar " + (sender === "user" ? "user-avatar" : "bot-avatar");
+    if (sender === "user") avatar.innerHTML = '<i class="fa-solid fa-user"></i>';
+    else avatar.innerHTML = `<img src="${logoUrl}" alt="AI">`;
+
+    const wrap = document.createElement("div");
+    wrap.className = "msg-wrap";
+
+    const bubble = document.createElement("div");
+    bubble.className = "msg " + (sender === "user" ? "user-msg" : "bot-msg");
+    bubble.textContent = text;
+
+    const timestamp = document.createElement("div");
+    timestamp.className = "timestamp";
+    timestamp.textContent = time || new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+    bubble.appendChild(timestamp);
+    wrap.appendChild(bubble);
+
+    if (sender === "user") {
+      row.appendChild(wrap);
+      row.appendChild(avatar);
+    } else {
+      row.appendChild(avatar);
+      row.appendChild(wrap);
+    }
+
+    messagesDiv.appendChild(row);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    if (save && currentChatId) {
+      chats[currentChatId].messages.push({text, sender, time:timestamp.textContent});
+      saveChats();
+      loadChatList(document.getElementById("chatSearch")?.value || "");
+    }
+  }
+
+  function addBotMessage(text, options=null) {
+    addMessage(text, "bot");
+    if (options) {
+      const messagesDiv = document.getElementById("messages");
+      const optionDiv = document.createElement("div");
+      optionDiv.className = "options";
+      Object.keys(options).forEach(key => {
+        const btn = document.createElement("button");
+        btn.textContent = key;
+        btn.className = "option-btn";
+        btn.onclick = () => { addMessage(key, "user", true); addBotMessage(options[key]); };
+        optionDiv.appendChild(btn);
+      });
+      messagesDiv.appendChild(optionDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  }
+
+  function deleteChat(e, id) {
+    e.stopPropagation();
+    if (confirm("Delete this conversation?")) {
+      delete chats[id];
+      saveChats();
+      const keys = Object.keys(chats);
+      if (keys.length > 0) loadChat(keys[keys.length - 1]);
+      else newChat();
+    }
+  }
+
+  function handleUpload() {
+    const fileInput = document.getElementById("fileUpload");
+    const file = fileInput.files[0];
+    const label = document.querySelector(".upload-btn");
+    if (!file) return;
+
+    label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading...</span>';
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch("/upload_dataset", {method:"POST", body:formData})
+      .then(res => res.json())
+      .then(data => {
+        label.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Upload student dataset</span>';
+        showToast(data.message, data.status === "success");
+      })
+      .catch(err => {
+        console.error(err);
+        label.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Upload student dataset</span>';
+        showToast("Upload failed. Please try again.", false);
+      });
+    fileInput.value = "";
+  }
+
+  function showToast(message, success=true) {
+    const toast = document.createElement("div");
+    toast.className = "toast " + (success ? "success" : "error");
+    toast.innerHTML = `<i class="fa-solid ${success ? "fa-circle-check" : "fa-circle-exclamation"}"></i><span>${escapeHtml(message)}</span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 250);
+    }, 2800);
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  }
+</script>
+</body>
+</html>

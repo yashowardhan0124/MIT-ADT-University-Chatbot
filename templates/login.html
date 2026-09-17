@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in | MIT-ADT AI Assistant</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="auth-page">
+  <section class="auth-brand">
+    <div class="brand-mark">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT University">
+      <div><strong>MIT-ADT UNIVERSITY</strong><span>Art, Design & Technology</span></div>
+    </div>
+    <div class="brand-copy">
+      <div class="eyebrow">University AI Platform</div>
+      <h1>Knowledge,<br>within reach.</h1>
+      <p>One intelligent place to explore university information — from academic programs and fees to placements, hostel and student services.</p>
+      <div class="brand-pills"><span>AI Assistant</span><span>University Knowledge</span><span>Student Services</span></div>
+    </div>
+    <div class="brand-footer">MIT-ADT University • Pune • Est. 2015</div>
+  </section>
+  <main class="auth-panel">
+    <div class="auth-card">
+      <img class="auth-logo" src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT logo">
+      <h2>Welcome back</h2>
+      <p class="auth-subtitle">Sign in to continue to the MIT-ADT AI Assistant.</p>
+      <form method="POST" action="/login">
+        <div class="form-field">
+          <label>Email address</label>
+          <div class="input-wrap"><i class="fa-regular fa-envelope"></i><input type="email" name="email" placeholder="you@example.com" autocomplete="email" required></div>
+        </div>
+        <div class="form-field">
+          <label>Password</label>
+          <div class="input-wrap"><i class="fa-solid fa-lock"></i><input type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required></div>
+        </div>
+        <button class="auth-btn" type="submit">Sign in <i class="fa-solid fa-arrow-right" style="margin-left:7px"></i></button>
+      </form>
+      <p class="auth-switch">Don't have an account? <a href="{{ url_for('signup') }}">Create one</a></p>
+      <div class="auth-note">Secure access to your university assistant</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

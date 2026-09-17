@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload dataset | MIT-ADT AI Assistant</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <main class="upload-page">
+    <div class="upload-card">
+      <img class="upload-logo" src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT">
+      <h2>Upload student dataset</h2>
+      <p>Add a CSV dataset to update the student information available to the assistant.</p>
+      <form method="POST" enctype="multipart/form-data">
+        <label class="file-drop" for="datasetFile">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <strong id="fileName">Choose a CSV file</strong>
+          <span>Click to browse • CSV format only</span>
+        </label>
+        <input id="datasetFile" type="file" name="file" accept=".csv" required hidden onchange="document.getElementById('fileName').textContent=this.files[0]?.name || 'Choose a CSV file'">
+        <button class="upload-submit" type="submit">Upload dataset <i class="fa-solid fa-arrow-up" style="margin-left:7px"></i></button>
+      </form>
+      <a class="back-link" href="/index"><i class="fa-solid fa-arrow-left" style="margin-right:5px"></i> Back to assistant</a>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create account | MIT-ADT AI Assistant</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="auth-page">
+  <section class="auth-brand">
+    <div class="brand-mark">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT University">
+      <div><strong>MIT-ADT UNIVERSITY</strong><span>Art, Design & Technology</span></div>
+    </div>
+    <div class="brand-copy">
+      <div class="eyebrow">Student Experience</div>
+      <h1>Your campus<br>starts here.</h1>
+      <p>Create your account and access a focused AI assistant built around university information and student needs.</p>
+      <div class="brand-pills"><span>Courses</span><span>Fees</span><span>Placements</span><span>Student Life</span></div>
+    </div>
+    <div class="brand-footer">MIT-ADT University • Pune • Est. 2015</div>
+  </section>
+  <main class="auth-panel">
+    <div class="auth-card">
+      <img class="auth-logo" src="{{ url_for('static', filename='logo.png') }}" alt="MIT-ADT logo">
+      <h2>Create your account</h2>
+      <p class="auth-subtitle">Set up your account to access the MIT-ADT AI Assistant.</p>
+      <form action="/signup" method="POST">
+        <div class="form-field">
+          <label>Full name</label>
+          <div class="input-wrap"><i class="fa-regular fa-user"></i><input type="text" name="name" placeholder="Your full name" autocomplete="name" required></div>
+        </div>
+        <div class="form-field">
+          <label>Email address</label>
+          <div class="input-wrap"><i class="fa-regular fa-envelope"></i><input type="email" name="email" placeholder="you@example.com" autocomplete="email" required></div>
+        </div>
+        <div class="form-field">
+          <label>Password</label>
+          <div class="input-wrap"><i class="fa-solid fa-lock"></i><input type="password" name="password" placeholder="Create a password" autocomplete="new-password" required></div>
+        </div>
+        <button class="auth-btn" type="submit">Create account <i class="fa-solid fa-arrow-right" style="margin-left:7px"></i></button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>
+      <div class="auth-note">MIT-ADT University AI Assistant</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
